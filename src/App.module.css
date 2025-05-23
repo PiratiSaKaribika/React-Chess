@@ -1,0 +1,28 @@
+.board {
+    width: 620px;
+    aspect-ratio: 1 / 1;
+
+    border: 2px solid gray;
+    border-radius: 8px;
+
+    margin: 0 auto;
+    margin-top: 64px;
+}
+
+.boardRow {
+    display: flex;
+}
+
+.boardRow:nth-child(odd) > *:nth-child(odd) { background: blue; }
+.boardRow:nth-child(even) > *:nth-child(even) { background: blue; }
+.boardRow:nth-child(even) > *:nth-child(odd) { background: white; }
+.boardRow:nth-child(odd) > *:nth-child(even) { background: white; }
+
+.tmp {
+    width: 48px;
+    height: 48px;
+
+    position: fixed;
+    top: 50%;
+}
+.tmp:nth-child(2) { top: calc(50% - 48px); border-bottom: 2px solid black; }
