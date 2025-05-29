@@ -13,10 +13,10 @@
     display: flex;
 }
 
-.boardRow:nth-child(odd) > *:nth-child(odd) { background: blue; }
-.boardRow:nth-child(even) > *:nth-child(even) { background: blue; }
-.boardRow:nth-child(even) > *:nth-child(odd) { background: white; }
-.boardRow:nth-child(odd) > *:nth-child(even) { background: white; }
+.boardRow:nth-child(odd) > *:nth-child(odd) { background: white; }
+.boardRow:nth-child(even) > *:nth-child(even) { background: white; }
+.boardRow:nth-child(even) > *:nth-child(odd) { background: blue; }
+.boardRow:nth-child(odd) > *:nth-child(even) { background: blue; }
 
 .tmp {
     width: 48px;
@@ -26,3 +26,17 @@
     top: 50%;
 }
 .tmp:nth-child(2) { top: calc(50% - 48px); border-bottom: 2px solid black; }
+
+.test {
+    width: 480px;
+    height: 160px;
+
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+
+    padding: 48px 64px;
+    background: lightgray;
+    border-radius: 12px;
+}

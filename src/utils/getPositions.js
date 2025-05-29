@@ -1,3 +1,4 @@
+import { getIsCapturable } from "./getCapturableBy"
 
 const isInBounds = (x, y) => (x <= 7 && x >= 0 && y <= 7 && y >=0)
 
@@ -62,17 +63,27 @@ const getPawnPositions = (piece, pos, isOccupied, pawnShot) => {
 
 
 
-export const getPositions = (piece, position, isOccupied, pawnShot, castlingAllowed) => {
+export const getPositions = (piece, position, isOccupied, getIsOccupiedBy, pawnShot, castlingAllowed, getPieceByPos) => {
     const pieceId = piece.slice(1)
     const isWhite = piece.slice(0, 1) == 'w'
+    const side = piece[0]
     
     const castlingPositions = []
     if(pieceId == 'ki' && castlingAllowed) {
         const row = isWhite ? 7 : 0
         const ruleArr = [[1, 2, 3], [5, 6]]
 
-        if(ruleArr[0].filter(col => isOccupied([row, col], piece[0]) !== 0).length == 0) { castlingPositions.push([row, 2]) }
-        if(ruleArr[1].filter(col => isOccupied([row, col], piece[0]) !== 0).length == 0) { castlingPositions.push([row, 6]) }
+        if(
+            ruleArr[0].filter(col => 
+                isOccupied([row, col], piece[0]) !== 0 || 
+                getIsCapturable([row, col], side, isOccupied, getIsOccupiedBy, getPieceByPos)
+            ).length == 0) { castlingPositions.push([row, 2]); }
+        if(
+            ruleArr[1].filter(col => 
+                isOccupied([row, col], piece[0]) !== 0 || 
+                getIsCapturable([row, col], side, isOccupied, getIsOccupiedBy, getPieceByPos)
+            ).length == 0) { castlingPositions.push([row, 6]) }
+        // if(ruleArr[1].filter(col => isOccupied([row, col], piece[0]) !== 0).length == 0) { castlingPositions.push([row, 6]) }
     }
 
     return pieceId == 'p' ?
