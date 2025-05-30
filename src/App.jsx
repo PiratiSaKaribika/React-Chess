@@ -30,7 +30,6 @@ const reducer = (state, action) => {
 
 
   const getIsOccupiedBy = (pos, piece) => state.board[pos[0]][pos[1]].piece == piece
-  // const getIsOccupiedBy = (pos, piece) => getPieceByPos(pos) == piece
 
 
   // Get positions found in two different arrays
@@ -38,6 +37,55 @@ const reducer = (state, action) => {
 
   
   const getIsCheck = sideIndex => state.checkInfo[sideIndex].check.length ? true : false
+
+
+
+  const getAvailablePostions = (position, piece) => {
+    const side = piece[0]
+    const sideIndex = side === 'w' ? 0 : 1
+
+    const checkInfo = state.checkInfo[sideIndex]
+    const isCheck = checkInfo.check.length ? true : false
+    
+
+    // Get all available positions (by pattern)
+    const rawPositions = getPositions(piece, position, isOccupied, getIsOccupiedBy, pawnShot,
+      getIsCheck(sideIndex) ? false : state.castlingAllowed[sideIndex], getPieceByPos
+    ); 
+    
+    // Get available positions for pinned piece
+    const pinned = checkInfo.pin.length > 0 ?
+      checkInfo.pin.find(obj => comparePos(obj.pos, position)) :
+      null
+
+    // Get available positions for king (if selected)
+    const kingEscapePositions = piece.slice(1) === 'ki' ?
+      isCheck ?
+      rawPositions.filter(pos => !getIsCapturable(pos, side, isOccupied, getIsOccupiedBy, getPieceByPos, false, true)) :
+      rawPositions.filter(pos => !getIsCapturable(pos, side, isOccupied, getIsOccupiedBy, getPieceByPos)) :
+      null
+
+    
+    // Get final available positions
+    const availablePos = isCheck ?
+      piece.slice(1) === 'ki' ?
+      kingEscapePositions :
+      checkInfo.check.length > 1 ?
+      [] :
+      pinned ? 
+      [] :
+      getIntersectingPositions(rawPositions, checkInfo.check[0].path.concat([checkInfo.check[0].pos])) :
+      pinned ?
+      getIntersectingPositions(pinned.path, rawPositions) :
+      piece.slice(1) === 'ki' ?
+      kingEscapePositions :
+      rawPositions
+
+    
+    return availablePos
+  }
+
+
 
 
 
@@ -52,24 +100,6 @@ const reducer = (state, action) => {
   }
 
 
-  const getIsCapturableByPawn = (pos, side) => {
-    const opSide = side === 'w' ? 'b' : 'w'
-    let pawnPos = false
-    const ops = [1, -1]
-
-    let [row, col] = pos;
-    const newRow = row + (side === 'w' ? -1 : 1);
-
-    ops.forEach(op => {
-      const newCol = col + op;
-      if(newRow < 0 || newCol < 0 || newRow > 7 || newCol > 7) { return; }
-
-      // if(getPieceByPos([newRow, newCol]) === (opSide + 'p')) { res.push([newRow, newCol]); }
-      if(getPieceByPos([newRow, newCol]) === (opSide + 'p')) { pawnPos = [newRow, newCol]; }
-    })
-
-    return pawnPos;
-  }
 
 
 
@@ -88,6 +118,19 @@ const reducer = (state, action) => {
 
 
 
+  const updateIsStalemate = () => {
+    let isStalemate = [true, true];
+    state.board.forEach((line, row) => line.forEach((field, col) => {
+      const sideIndex = field.piece[0] === 'w' ? 0 : 1
+      if(!field.piece || !isStalemate[sideIndex]) return
+
+      if(getAvailablePostions([row, col], field.piece).length) { isStalemate[field.piece[0] === "w" ? 0 : 1] = false }
+    }))
+
+
+    if(isStalemate[0] || isStalemate[1]) { state.winner = 's' }
+  }
+
 
   const updateCheckAndPin = side => {
     const opSide = side === 'w' ? 'b' : 'w'
@@ -99,12 +142,11 @@ const reducer = (state, action) => {
     
     const {check} = checkInfo
     if(check.length > 0) {
-      // state.isCheck[sideIndex] = true; 
       const rawKingAvailable = getPositions(side + 'ki', kingPos, isOccupied, getIsOccupiedBy, pawnShot, false, getPieceByPos)
 
 
       const isKingMovable = rawKingAvailable.filter(pos => 
-        getIsCapturable(pos, side, isOccupied, getIsOccupiedBy, getPieceByPos) == false).length > 0
+        getIsCapturable(pos, side, isOccupied, getIsOccupiedBy, getPieceByPos, false, true) == false).length > 0
 
       const isCheckingPieceCapturable = check.length > 1 ? false :
         getIsCapturable(check[0].pos, opSide, isOccupied, getIsOccupiedBy, getPieceByPos)
@@ -124,9 +166,6 @@ const reducer = (state, action) => {
   }
 
 
-  // console.log(state.checkInfo)
-  if(!getPieceByPos) { alert("wadafuq") }
-
 
 
 
@@ -136,8 +175,6 @@ const reducer = (state, action) => {
       const [piece, position] = action.payload
 
       const isWhite = piece.slice(0, 1) == "w" ? true : false;
-      const side = piece[0]
-      const sideIndex = isWhite ? 0 : 1
       if(isWhite !== state.isWhiteTurn) { return state; } // Check if player's turn
 
       // Deselect on double select
@@ -145,39 +182,8 @@ const reducer = (state, action) => {
         return {...state, selected: null}
       }
 
-      const checkInfo = state.checkInfo[sideIndex]
-      const isCheck = checkInfo.check.length ? true : false
 
-
-      
-      // Get all available positions (by pattern)
-      const rawPositions = getPositions(piece, position, isOccupied, getIsOccupiedBy, pawnShot,
-        getIsCheck(sideIndex) ? false : state.castlingAllowed[sideIndex], getPieceByPos
-      ); 
-      
-      // Get available positions for pinned piece
-      const pinned = checkInfo.pin.length > 0 ?
-        checkInfo.pin.find(obj => comparePos(obj.pos, position)) :
-        null
-
-      // Get available positions for king (if selected)
-      const kingEscapePositions = piece.slice(1) === 'ki' ?
-        rawPositions.filter(pos => !getIsCapturable(pos, side, isOccupied, getIsOccupiedBy, getPieceByPos, false)) :
-        null
-
-      
-      // Get final available positions
-      const availablePos = isCheck ?
-        piece.slice(1) === 'ki' ?
-        kingEscapePositions :
-        checkInfo.check.length > 1 ?
-        [] :
-        pinned ? 
-        [] :
-        getIntersectingPositions(rawPositions, checkInfo.check[0].path.concat([checkInfo.check[0].pos])) :
-        pinned ?
-        getIntersectingPositions(pinned.path, rawPositions) :
-        rawPositions
+      const availablePos = getAvailablePostions(position, piece)
 
       availablePos.forEach(aPos => state.board[aPos[0]][aPos[1]].isAvailable = true)
       return {...state, selected: position}
@@ -194,7 +200,7 @@ const reducer = (state, action) => {
       // Check if castling is requested, move the rook
       if(
         sPiece.slice(1) == 'ki' &&
-        state.castlingAllowed[side == 'w' ? 0 : 1] &&
+        // state.castlingAllowed[side == 'w' ? 0 : 1] &&
         (newPos[1] - oldPos[1] > 1 ||
         oldPos[1] - newPos[1] > 1)
       ) {
@@ -213,7 +219,15 @@ const reducer = (state, action) => {
         state.board[oldPos[0]][oldPos[1]].piece = '' // Remove selected piece from old position
 
         // Disable castling if king or rook moved
-        if(sPiece.slice(1) == 'ki' || sPiece.slice(1) == 'r') { state.castlingAllowed[side == 'w' ? 0 : 1] = false }
+        // if(sPiece.slice(1) == 'ki' || sPiece.slice(1) == 'r') { state.castlingAllowed[side == 'w' ? 0 : 1] = false }
+        if(sPiece.slice(1) == 'ki') { state.castlingAllowed[side == 'w' ? 0 : 1] = [false, false] }
+        if(sPiece.slice(1) == 'r' && (state.selected[1] === 0 || state.selected[1] === 7)) {
+          state.castlingAllowed
+            [side == 'w' ? 0 : 1]
+            [state.selected[1] === 0 ? 0 : 1]
+          = false
+        }
+
 
         // Update king state position
         if(sPiece.slice(1) == 'ki') { state.kingPos[side == 'w' ? 0 : 1] = newPos }
@@ -221,8 +235,8 @@ const reducer = (state, action) => {
         clearAvailable() // Clear available positions
         updateCheckAndPin('w'); 
         updateCheckAndPin('b');
+        updateIsStalemate()
 
-        // console.log(getIsCapturable([7, 2], 'w', isOccupied, getIsOccupiedBy))
         switchTurn()
       }
 
@@ -233,8 +247,7 @@ const reducer = (state, action) => {
       if(!state.moves.positions.length) return
       const lastMove = state.moves.positions[state.moves.positions.length - 1]
       const [newM, oldM] = lastMove
-      // console.log(newM)
-      // console.log(oldM)
+
       state.board[newM.pos[0]][newM.pos[1]].piece = newM.piece
       state.board[oldM.pos[0]][oldM.pos[1]].piece = oldM.piece
 
@@ -252,7 +265,7 @@ export default function App() {
     board,
     selected: null,
     isWhiteTurn: true,
-    castlingAllowed: [true, true], // Is Castling allowed [white, black]
+    castlingAllowed: [[true, true], [true, true]], // Is Castling allowed [white: [left. right], black: [left, right]]
     isCheck: [false, false], // Is check [white, black],
     checkInfo: [{check: [], pin: []}, {check: [], pin: []}],
     kingPos: [[7, 4], [0, 4]],
@@ -277,7 +290,11 @@ export default function App() {
       {
         state.winner ?
       <div className={styles.test}>
+      {
+        state.winner === 's' ?
+        <h1>Stalemate</h1> :
         <h1>Winner is {state.winner === 'w' ? "white" : "black"}</h1>
+      }
       </div> : null
       }
 

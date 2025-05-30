@@ -69,16 +69,18 @@ export const getPositions = (piece, position, isOccupied, getIsOccupiedBy, pawnS
     const side = piece[0]
     
     const castlingPositions = []
-    if(pieceId == 'ki' && castlingAllowed) {
+    if(pieceId == 'ki' && castlingAllowed[0] || castlingAllowed[1]) {
         const row = isWhite ? 7 : 0
         const ruleArr = [[1, 2, 3], [5, 6]]
 
         if(
+            castlingAllowed[0] &&
             ruleArr[0].filter(col => 
                 isOccupied([row, col], piece[0]) !== 0 || 
                 getIsCapturable([row, col], side, isOccupied, getIsOccupiedBy, getPieceByPos)
             ).length == 0) { castlingPositions.push([row, 2]); }
         if(
+            castlingAllowed[1] &&
             ruleArr[1].filter(col => 
                 isOccupied([row, col], piece[0]) !== 0 || 
                 getIsCapturable([row, col], side, isOccupied, getIsOccupiedBy, getPieceByPos)

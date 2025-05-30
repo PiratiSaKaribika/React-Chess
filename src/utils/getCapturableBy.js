@@ -136,7 +136,7 @@ export const getCapturableByPawnPositions = (pos, side, getPieceByPos) => {
 
 
 
-export const getIsCapturable = (pos, side, isOccupied, getIsOccupiedBy, getPieceByPos, excludeKing) => {
+export const getIsCapturable = (pos, side, isOccupied, getIsOccupiedBy, getPieceByPos, excludeKing, isKing) => {
     const opSide = side === 'w' ? 'b' : 'w'
     // if(getCapturableByPawnPositions(pos, side, getPieceByPos)) {console.log("AAA"); console.log(pos); console.log("AAA"); return true}
     if(getCapturableByPawnPositions(pos, side, getPieceByPos)) { return true }
@@ -164,7 +164,8 @@ export const getIsCapturable = (pos, side, isOccupied, getIsOccupiedBy, getPiece
                         // console.log(opSide + piece)
                         return; 
                     }
-                    else { break; }
+                    else if(!isKing || !getPieceByPos(pos) === (side + 'ki')) { break; } 
+                    // else { break; }
                 }
 
                 if(piece === 'k' || piece === 'ki') { break; }
