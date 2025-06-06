@@ -4,6 +4,8 @@
 
     border-left: 1px solid gray;
     border-bottom: 1px solid gray;
+    
+    position: relative;
 }
 
 .img {
@@ -12,3 +14,26 @@
     min-width: 100%;
     aspect-ratio: 1 / 1;
 }
+
+
+
+.mark {
+    position: absolute;
+    color: white;
+
+    -webkit-touch-callout: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+}
+
+.rowMark {
+    top: 2px;
+    left: 2px;
+}
+
+.colMark {
+    bottom: 2px;
+    right: 2px;
+}
+/* .field:nth-child(odd) > .rowMark { background: red; } */

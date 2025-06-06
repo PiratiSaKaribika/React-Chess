@@ -3,6 +3,7 @@ import styles from './App.module.css'
 
 // Components
 import Field from './Field';
+import Promotion from './components/Promotion';
 
 // Utils and Assets
 import { board } from './boardDefault';
@@ -14,6 +15,12 @@ import { getCheckInfo, getIsCapturable } from './utils/getCapturableBy'
 
 const reducer = (state, action) => {
   const getPieceByPos = pos => state.board[pos[0]][pos[1]].piece
+  // const getPieceByPos = pos => { 
+  //   if(typeof state.board[pos[0]] == 'undefined') {
+  //     console.log(pos);
+  //   }
+  //   state.board[pos[0]][pos[1]].piece
+  // }
   
   const comparePos = (pos1, pos2) => pos1[0] == pos2[0] && pos1[1] == pos2[1]
 
@@ -99,6 +106,8 @@ const reducer = (state, action) => {
     return res
   }
 
+  const modifyFieldPiece = (pos, piece) => state.board[pos[0]][pos[1]].piece = piece
+
 
 
 
@@ -116,6 +125,28 @@ const reducer = (state, action) => {
   const clearAvailable = () => state.board.forEach(row => { row.forEach(col => col.isAvailable = false) })
 
 
+
+
+  const updateMoveHistory = (oldPos, newPos) => {
+    const { current } = state.moves
+    const getUiMove = pos => [String.fromCharCode(pos[1] + 65), pos[0] + 1].join('')
+
+    if(current < state.moves.positions.length - 1) {
+      alert("CUT")
+      state.moves.positions = state.moves.positions.slice(0, current + 1)
+      state.moves.uiList = state.moves.uiList.slice(0, current + 1)
+    }
+
+    state.moves.positions.push([
+      {piece: state.board[oldPos[0]][oldPos[1]].piece, pos: oldPos}, 
+      {piece: state.board[newPos[0]][newPos[1]].piece, pos: newPos},
+    ])
+
+    // state.moves.uiList.push(oldPos.join('-'), newPos.join('-'))
+    state.moves.uiList.push([getUiMove(oldPos), getUiMove(newPos)].join('-'))
+
+    state.moves.current = state.moves.current + 1;
+  }
 
 
   const updateIsStalemate = () => {
@@ -157,12 +188,38 @@ const reducer = (state, action) => {
         ).length > 0
 
 
-      console.log(isKingMovable, isCheckingPieceCapturable, isCheckingPieceBlockable)
+      // console.log(isKingMovable, isCheckingPieceCapturable, isCheckingPieceBlockable)
       if(!isKingMovable && !isCheckingPieceCapturable && !isCheckingPieceBlockable) {
         state.winner = opSide
       }
     }
+  }
 
+
+  // Update all the state logic after played move - mate, stalemate and switch turn
+  const updateBundle = () => {
+    updateCheckAndPin('w'); 
+    updateCheckAndPin('b');
+    updateIsStalemate()
+    switchTurn()
+  }
+
+
+
+
+  const updatePromotion = () => {
+    const rows = [0, 7]
+    let isPromotion = false;
+    
+    rows.forEach(row => {
+      const wantedPiece = row === 0 ? 'wp' : 'bp'
+      state.board[row].forEach((field, col) => {
+        if(isPromotion) return
+        if(field.piece === wantedPiece) { state.promotion = {side: wantedPiece[0], col}; isPromotion = true; }
+      })
+    })
+
+    return isPromotion
   }
 
 
@@ -200,7 +257,6 @@ const reducer = (state, action) => {
       // Check if castling is requested, move the rook
       if(
         sPiece.slice(1) == 'ki' &&
-        // state.castlingAllowed[side == 'w' ? 0 : 1] &&
         (newPos[1] - oldPos[1] > 1 ||
         oldPos[1] - newPos[1] > 1)
       ) {
@@ -211,15 +267,14 @@ const reducer = (state, action) => {
 
 
       if(sPiece) { // Prevent strict mode from removing the piece from new position
-        state.moves.positions.push([
-          {piece: state.board[oldPos[0]][oldPos[1]].piece, pos: oldPos}, 
-          {piece: state.board[newPos[0]][newPos[1]].piece, pos: newPos},
-        ])
+        updateMoveHistory(oldPos, newPos)
+
         state.board[newPos[0]][newPos[1]].piece = sPiece // Set selected piece to new position
         state.board[oldPos[0]][oldPos[1]].piece = '' // Remove selected piece from old position
 
+
+
         // Disable castling if king or rook moved
-        // if(sPiece.slice(1) == 'ki' || sPiece.slice(1) == 'r') { state.castlingAllowed[side == 'w' ? 0 : 1] = false }
         if(sPiece.slice(1) == 'ki') { state.castlingAllowed[side == 'w' ? 0 : 1] = [false, false] }
         if(sPiece.slice(1) == 'r' && (state.selected[1] === 0 || state.selected[1] === 7)) {
           state.castlingAllowed
@@ -232,26 +287,75 @@ const reducer = (state, action) => {
         // Update king state position
         if(sPiece.slice(1) == 'ki') { state.kingPos[side == 'w' ? 0 : 1] = newPos }
 
+        
         clearAvailable() // Clear available positions
-        updateCheckAndPin('w'); 
-        updateCheckAndPin('b');
-        updateIsStalemate()
+        if(updatePromotion()) { return {...state} }
+        
 
-        switchTurn()
+        updateBundle()
       }
 
       return {...state, selected: null} // Update state and deselect position
     }
 
+
     case "undo": {
-      if(!state.moves.positions.length) return
-      const lastMove = state.moves.positions[state.moves.positions.length - 1]
-      const [newM, oldM] = lastMove
+      if(state.moves.current === -1) return {...state}
+      
+      const [newMove, oldMove] = state.moves.positions[state.moves.current]
+      
+      // Update old state to calculate check and pin info
+      state.board[newMove.pos[0]][newMove.pos[1]].piece = newMove.piece
+      state.board[oldMove.pos[0]][oldMove.pos[1]].piece = oldMove.piece
 
-      state.board[newM.pos[0]][newM.pos[1]].piece = newM.piece
-      state.board[oldM.pos[0]][oldM.pos[1]].piece = oldM.piece
+      const newState = {
+        ...state, 
+        moves: {...state.moves, current: state.moves.current - 1},
+        isWhiteTurn: !state.isWhiteTurn,
+        winner: '',
+        checkInfo: [
+          getCheckInfo(state.kingPos[0], 'w', isOccupied, getIsOccupiedBy, getPieceByPos),
+          getCheckInfo(state.kingPos[1], 'b', isOccupied, getIsOccupiedBy, getPieceByPos)
+        ],
+        board: state.board.map((rank, row) => rank.map((field, col) => 
+          comparePos(newMove.pos, [row, col]) ?
+            ({...field, piece: newMove.piece}) :
+          comparePos(oldMove.pos, [row, col]) ?
+            ({...field, piece: oldMove.piece}) :
+          field
+        ))
+      }
 
-      return {...state, isWhiteTurn: !state.isWhiteTurn}
+      return newState;
+
+      
+      // OLD SOLUTION - not used because of react strict mode problems
+      //
+      // const [newPos, oldPos] = state.moves.positions[state.moves.current]
+      // state.board[newPos.pos[0]][newPos.pos[1]].piece = newPos.piece
+      // state.board[oldPos.pos[0]][oldPos.pos[1]].piece = oldPos.piece
+      
+      // state.moves.current = state.moves.current - 1
+      // state.isWhiteTurn = !state.isWhiteTurn
+
+      // updateCheckAndPin('w'); 
+      // updateCheckAndPin('b');
+      
+      // return {...state}
+    }
+
+
+
+
+    case "promote_pawn": {
+      if(!Object.keys(state.promotion).length) return {...state}; // Prevent strict mode
+      const {pos, piece} = action.payload;
+    
+      modifyFieldPiece(pos, piece);
+      state.promotion = {};
+      updateBundle()
+      
+      return {...state};
     }
 
     case "clear_select": return clearSelect()
@@ -273,12 +377,19 @@ export default function App() {
     winner: '',
     moves: {
       uiList: [],
-      positions: []
-    }
+      positions: [],
+      current: -1
+    },
+    promotion: {} // {side, col}
   })
+
 
   const isCheck = state.checkInfo.map(obj => obj.check.length ? true : false)
   const handleUndo = () => dispatch({type: "undo"})
+
+  const handlePromote = (pos, piece) => dispatch({type: "promote_pawn", payload: {pos, piece}})
+
+  const uiMoveList = state.moves.current >= 0 ? state.moves.uiList.slice(0, state.moves.current + 1) : null
 
 
   return (
@@ -298,28 +409,99 @@ export default function App() {
       </div> : null
       }
 
-      <div className={styles.board}>
-        {
-          state.board.map((row, i) => (
-            <div className={styles.boardRow} key={i}>
+
+      <div className={styles.main}>
+        <div className={styles.game}>
+          <div className={styles.playerInfo}>
+            <div className={styles.capturedPieces}>
+              PLACEHOLDER
+            </div>
+
+            <div className={styles.timer}>
+              <h4 className={styles.timerContent}>
+                10:00
+              </h4>
+            </div>
+          </div>
+
+          <div className={styles.board}>
             {
-              row.map((col, j) => 
-                <Field 
-                  key={i+j}
-                  row={i}
-                  col={j}
-                  piece={col.piece}
-                  selected={state.selected}
-                  isAvailable={col.isAvailable}
-                  dispatch={dispatch}
-                />
+              state.board.map((row, i) => (
+                <div className={styles.boardRow} key={i}>
+                {
+                  row.map((col, j) => 
+                    <Field 
+                      key={i+j}
+                      row={i}
+                      col={j}
+                      piece={col.piece}
+                      selected={state.selected}
+                      isAvailable={col.isAvailable}
+                      dispatch={dispatch}
+                    />
+                  )
+                }
+                </div>
+              )
               )
             }
+
+            {
+            Object.keys(state.promotion).length > 0 ?
+              <Promotion 
+                side={state.promotion.side}
+                col={state.promotion.col}
+                handlePromote={handlePromote}
+              /> : null
+            }
+          </div>
+
+
+
+          <div className={styles.playerInfo}>
+            <div className={styles.capturedPieces}>
+              PLACEHOLDER
             </div>
-          )
-          )
-        }
+
+            <div className={styles.timer}>
+              <h4 className={styles.timerContent}>
+                10:00
+              </h4>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.sidebar}>
+          <ul className={styles.movesList}>
+          {
+          uiMoveList ? uiMoveList.map(move =>
+            <li className={styles.sMove}>
+              <h4>{move}</h4>
+            </li>
+          ) : null
+          }
+            {/* <li className={styles.sMove}>
+              <h4>e2 - e4</h4>
+            </li> */}
+          </ul>
+
+          <div className={styles.ctrlsCont}>
+            <button className={`${styles.ctrlBtn} ${styles.ctrlBtnUndo}`}>
+              undo
+            </button>
+
+            <button className={`${styles.ctrlBtn} ${styles.ctrlBtnRedo}`}>
+              redo
+            </button>
+
+            <button className={`${styles.ctrlBtn} ${styles.ctrlBtnRestart}`}>
+              restart
+            </button>
+          </div>
+        </div>
       </div>
+
+
     </div>
   )
 }

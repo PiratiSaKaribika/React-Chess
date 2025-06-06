@@ -4,17 +4,11 @@ import { PieceImg } from './assets/PieceImg'
 export default function Field({ row, col, piece, selected, isAvailable, dispatch }) {
     
     const isSelected = selected ? (selected[0] == row && selected[1] == col) ? true : false : false
+    const letter = row === 7 ? Number.toString(col) : null
     
     const clickHandler = e => {
         e.preventDefault()
 
-        // if(piece) {
-        //     dispatch({ type: "select_piece", payload: piece ? [piece, [row, col]] : null })
-        // } else if(isAvailable) {
-        //     dispatch({ type: "move_piece", payload: [row, col] })
-        // } else {
-        //     dispatch({ type: "clear_select" })
-        // }
         if(isAvailable) {
             dispatch({ type: "move_piece", payload: [row, col] })
         } else if(piece) {
@@ -40,6 +34,18 @@ export default function Field({ row, col, piece, selected, isAvailable, dispatch
             <span className={styles.img}>
                 <PieceImg name={piece} />
             </span>
+
+            {
+            col === 0 ?
+                <span className={`${styles.mark} ${styles.rowMark}`}>{row + 1}</span> :
+                null
+            }
+
+            {
+            row === 7 ?
+                <span className={`${styles.mark} ${styles.colMark}`}>{String.fromCharCode(col + 65).toLowerCase()}</span> :
+                null
+            }
         </div>
     )
 }

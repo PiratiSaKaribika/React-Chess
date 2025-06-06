@@ -1,12 +1,15 @@
 .board {
-    width: 620px;
+    /* width: 620px; */
+    width: 100%;
     aspect-ratio: 1 / 1;
 
     border: 2px solid gray;
     border-radius: 8px;
 
     margin: 0 auto;
-    margin-top: 64px;
+    /* margin-top: 64px; */
+
+    position: relative;
 }
 
 .boardRow {
@@ -17,6 +20,10 @@
 .boardRow:nth-child(even) > *:nth-child(even) { background: white; }
 .boardRow:nth-child(even) > *:nth-child(odd) { background: blue; }
 .boardRow:nth-child(odd) > *:nth-child(even) { background: blue; }
+
+.boardRow:nth-child(odd) > :first-child > span:last-child { color: blue; }
+.boardRow:last-child > :nth-child(even) > span:last-child { color: blue; }
+
 
 .tmp {
     width: 48px;
@@ -39,4 +46,100 @@
     padding: 48px 64px;
     background: lightgray;
     border-radius: 12px;
+}
+
+/* .rowMarks {
+    height: calc(100% / 8 * 7);
+    display: flex;
+    flex-direction: column;
+
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.rowMarks > * {
+    margin-bottom: 64px;
+    border: 1px solid red;
+}
+.rowMarks > :last-child { margin-bottom: 0; } */
+
+
+
+.main {
+    max-width: 960px;
+    margin: 0 auto;
+    
+    display: flex;
+    column-gap: 16px;
+
+    margin-top: 32px;
+}
+
+
+.game {
+    /* margin: 0 auto; */
+    /* width: 620px; */
+    min-width: var(--board-width);
+
+    display: flex;
+    flex-direction: column;
+    row-gap: 8px;
+}
+
+
+.playerInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.timer {
+    background: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    border: 1px solid black;
+}
+
+
+
+.sidebar {
+    width: 100%;
+    height: var(--board-width);
+
+    display: flex;
+    align-self: center;
+    flex-direction: column;
+    justify-content: stretch;
+    row-gap: 16px;
+
+    padding: 16px 0 8px;
+    background: gray;
+}
+
+
+.movesList {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0 32px;
+}
+.sMove { 
+    width: 50%;
+}
+.sMove:nth-child(even) {
+    background: gray;
+    place-content: right;
+    text-align: right;
+}
+/* .sMove:last-child { margin-bottom: 0; } */
+
+.ctrlsCont {
+    display: flex;
+    column-gap: 4px;
+
+    margin-top: auto;
+    padding: 0 8px;
+}
+
+.ctrlBtn {
+    width: 100%;
 }

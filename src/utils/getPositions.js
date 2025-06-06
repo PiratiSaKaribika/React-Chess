@@ -47,7 +47,10 @@ const getPawnPositions = (piece, pos, isOccupied, pawnShot) => {
     const [row, col] = pos
 
     const side = piece[0]
-    let x = side == "b" ? row + 1 : row - 1, y = col;
+    let x = (row == 7 || row == 0) ? row : // Prevent getting out of bounds
+        side == "b" ? row + 1 : row - 1
+    let y = col;
+
     const isStartingPos = side == "b" ? row == 1 ? true : false : (side == "w" && row == 6) ? true : false
 
     if(isOccupied([x, y], piece[0]) == 0) { result.push([x, y]); }
