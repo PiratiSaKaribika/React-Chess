@@ -1,4 +1,4 @@
-import { useReducer, useMemo } from 'react'
+import { useReducer } from 'react'
 import styles from './App.module.css'
 
 // Components
@@ -9,10 +9,6 @@ import Promotion from './components/Promotion';
 import { board } from './boardDefault';
 import { getPositions } from './utils/getPositions';
 import { getCheckInfo, getIsCapturable } from './utils/getCapturableBy'
-
-function deepClone(obj) {
-  return JSON.parse(JSON.stringify(obj))
-}
 
 
 
@@ -130,26 +126,38 @@ const reducer = (state, action) => {
 
 
 
-  const updateMoveHistory = (oldMove, newMove) => {
-    const getUiMove = pos => String.fromCharCode(pos[1] + 65) + (8 - pos[0])
-    
-    if(state.history.current < state.history.moves.length) {
+
+  // const updateMoveHistory = (oldPos, newPos) => {
+  const updateMoveHistory = (newMove, oldMove) => {
+    const { current } = state.moves
+    const getUiMove = pos => [String.fromCharCode(pos[1] + 65), pos[0] + 1].join('')
+
+    if(current < state.moves.positions.length - 1) {
       alert("CUT")
-      state.history.moves = state.history.moves.slice(0, state.history.current)
-      state.history.info = state.history.info.slice(0, state.history.current)
-      state.history.uiMoveList = state.history.uiMoveList.slice(0, state.history.current)
+      state.moves.positions = state.moves.positions.slice(0, current + 1)
+      state.moves.uiList = state.moves.uiList.slice(0, current + 1)
+      state.moves.other = state.moves.other.slice(0, current + 1)
     }
-    
-    state.history.uiMoveList.push([getUiMove(oldMove.pos), getUiMove(newMove.pos)].join('-'))
-    state.history.moves.push([oldMove, newMove])
-    state.history.current += 1;
-    state.history.info.push(JSON.parse(JSON.stringify({
-      checkInfo: state.checkInfo,
-      winner: state.winner,
-      promotion: state.promotion,
+
+    // state.moves.positions.push([
+    //   {piece: state.board[oldPos[0]][oldPos[1]].piece, pos: oldPos}, 
+    //   {piece: state.board[newPos[0]][newPos[1]].piece, pos: newPos},
+    // ])
+    state.moves.positions.push([newMove, oldMove])
+
+    // state.moves.uiList.push(oldPos.join('-'), newPos.join('-'))
+    // state.moves.uiList.push([getUiMove(oldPos), getUiMove(newPos)].join('-'))
+    state.moves.uiList.push([getUiMove(oldMove.pos), getUiMove(newMove.pos)].reverse().join('-'))
+
+    state.moves.other.push(JSON.parse(JSON.stringify({
+      castlingAllowed: state.castlingAllowed,
       kingPos: state.kingPos,
-      castlingAllowed: state.castlingAllowed
+      checkInfo: state.checkInfo
     })))
+
+    state.moves.current = state.moves.current + 1;
+
+    // console.log(state.moves.other[state.moves.other.length - 1].checkInfo)
   }
 
 
@@ -202,17 +210,10 @@ const reducer = (state, action) => {
 
   // Update all the state logic after played move - mate, stalemate and switch turn
   const updateBundle = () => {
+    // console.log("RAN")
     updateCheckAndPin('w'); 
     updateCheckAndPin('b');
     updateIsStalemate()
-
-    state.history.last = JSON.parse(JSON.stringify({
-      checkInfo: state.checkInfo,
-      winner: state.winner,
-      promotion: state.promotion,
-      kingPos: state.kingPos,
-      castlingAllowed: state.castlingAllowed
-    }))
 
     switchTurn()
   }
@@ -261,7 +262,7 @@ const reducer = (state, action) => {
 
     case "move_piece": {
       const oldPos = state.selected
-      const [newPos] = action.payload
+      const [newPos, isRedo] = action.payload
 
       const oldMove = {piece: getPieceByPos(oldPos), pos: oldPos}
       const newMove = {piece: getPieceByPos(newPos), pos: newPos}
@@ -282,9 +283,13 @@ const reducer = (state, action) => {
         state.board[newPos[0]][col == 3 ? 0 : 7].piece = ''
       }
 
+
       if(sPiece) { // Prevent strict mode from removing the piece from new position
+        // updateMoveHistory(oldPos, newPos)
+
         state.board[newPos[0]][newPos[1]].piece = sPiece // Set selected piece to new position
         state.board[oldPos[0]][oldPos[1]].piece = '' // Remove selected piece from old position
+
 
 
         // Disable castling if king or rook moved
@@ -300,66 +305,92 @@ const reducer = (state, action) => {
         // Update king state position
         if(sPiece.slice(1) == 'ki') { state.kingPos[side == 'w' ? 0 : 1] = newPos }
 
-        updateMoveHistory(oldMove, newMove)
         
         clearAvailable() // Clear available positions
-
         if(updatePromotion()) { return {...state} }
+        
+
         updateBundle()
+        
+        if(!isRedo) updateMoveHistory(oldMove, newMove);
+        else { state.moves.current = state.moves.current + 1 }
       }
 
       return {...state, selected: null} // Update state and deselect position
     }
 
 
-
-
-
     case "undo": {
-      const index = state.history.current - 1;
+      const index = state.moves.current;
       if(index < 0) return state;
+      // if(state.moves.current === -1) return {...state}
 
-      const [oldMove, newMove] = state.history.moves[index]
-      const info = state.history.info[index]
+      // const [newMove, oldMove] = state.moves.positions[state.moves.current]
+      const [newMove, oldMove] = state.moves.positions[index]
+      // console.log(state.moves.other[index].checkInfo)
 
-      return {
-        ...state,
-        history: {...state.history, current: index},
-        ...info,
+      console.log(index)
+      console.log(state.moves.other)
+
+      
+
+
+      const newState = {
+        ...state, 
+        ...state.moves.other[state.moves.current - 1],
+        moves: {...state.moves, current: state.moves.current - 1},
         isWhiteTurn: !state.isWhiteTurn,
+        winner: '',
         board: state.board.map((rank, row) => rank.map((field, col) => 
-          comparePos([row, col], oldMove.pos) ?
-            {...field, piece: oldMove.piece} :
-          comparePos([row, col], newMove.pos) ?
-            {...field, piece: newMove.piece} :
+          comparePos(newMove.pos, [row, col]) ?
+            ({...field, piece: newMove.piece}) :
+          comparePos(oldMove.pos, [row, col]) ?
+            ({...field, piece: oldMove.piece}) :
           field
         ))
       }
-    }
 
-    case "redo": {
-      const index = state.history.current
-      if(index > state.history.moves.length - 1) return state;
+      return newState;
+
       
-      const isLastMove = index === state.history.moves.length - 1
+      // OLD SOLUTION - not used because of react strict mode problems
+      //
+      // const [newPos, oldPos] = state.moves.positions[state.moves.current]
+      // state.board[newPos.pos[0]][newPos.pos[1]].piece = newPos.piece
+      // state.board[oldPos.pos[0]][oldPos.pos[1]].piece = oldPos.piece
+      
+      // state.moves.current = state.moves.current - 1
+      // state.isWhiteTurn = !state.isWhiteTurn
 
-      const [oldMove, newMove] = state.history.moves[index]
-      const info = isLastMove ? state.history.last : state.history.info[index + 1]
-
-      return {
-        ...state,
-        history: {...state.history, current: index + 1},
-        ...info,
-        isWhiteTurn: !state.isWhiteTurn,
-        board: state.board.map((rank, row) => rank.map((field, col) => 
-          comparePos([row, col], newMove.pos) ?
-            {...field, piece: oldMove.piece} :
-          comparePos([row, col], oldMove.pos) ?
-            {...field, piece: ''} :
-          field
-        ))
-      };
+      // updateCheckAndPin('w'); 
+      // updateCheckAndPin('b');
+      
+      // return {...state}
     }
+
+    // case "redo": {
+    //   const index = state.moves.current + 1;
+    //   if(index > state.moves.positions.length - 1) { alert("OUT"); return state; }
+
+    //   const [oldMove, newMove] = state.moves.positions[index];
+
+    //   const newState = {
+    //     ...state, 
+    //     ...state.moves.other[state.moves.current],
+    //     moves: {...state.moves, current: state.moves.current + 1},
+    //     isWhiteTurn: !state.isWhiteTurn,
+    //     board: state.board.map((rank, row) => rank.map((field, col) => 
+    //       comparePos(newMove.pos, [row, col]) ?
+    //         ({...field, piece: oldMove.piece}) :
+    //       comparePos(oldMove.pos, [row, col]) ?
+    //         ({...field, piece: ''}) :
+    //       field
+    //     ))
+    //   }
+
+    //   return newState;
+    // }
+    // case "redo": ({...state, moves: {...state.moves, other: {...state.moves.other, current: state.moves.other.current + 1}}})
 
 
 
@@ -387,36 +418,44 @@ export default function App() {
     selected: null,
     isWhiteTurn: true,
     castlingAllowed: [[true, true], [true, true]], // Is Castling allowed [white: [left. right], black: [left, right]]
+    // isCheck: [false, false], // Is check [white, black],
     checkInfo: [{check: [], pin: []}, {check: [], pin: []}],
     kingPos: [[7, 4], [0, 4]],
+    // pinned: [[], []],
     winner: '',
-    promotion: {}, // {side, col}
-    history: {
-      uiMoveList: [],
-      moves: [], // [[{oldPos, piece}, {newPos, piece}], ...]
-      current: 0, // Current move index in history
-      info: [], // [ {castlingAllowed, checkInfo, promotion, kingPos, winner}, ... ]
-      last: null // Latest move info (made this way to avoid bugs)
-    }
+    moves: {
+      uiList: [],
+      positions: [],
+      current: -1,
+      other: [] // [{castlingAllowed, checkInfo, kingPos}]
+    },
+    promotion: {} // {side, col}
   })
 
 
   const isCheck = state.checkInfo.map(obj => obj.check.length ? true : false)
+  const handleUndo = () => dispatch({type: "undo"})
+  // const handleRedo = () => dispatch({type: "redo"})
+
+  const handleRedo = () => {
+    const index = state.moves.current + 1;
+    if(index > state.moves.positions.length - 1) { alert("OUT"); return state; }
+
+    const [oldMove, newMove] = state.moves.positions[index];
+    dispatch({type: "select_piece", payload: [oldMove.piece, oldMove.pos]})
+    dispatch({type: "move_piece", payload: [newMove.pos, true]})
+  }
 
   const handlePromote = (pos, piece) => dispatch({type: "promote_pawn", payload: {pos, piece}})
 
-  const handleUndo = () => dispatch({type: "undo"})
-  const handleRedo = () => dispatch({type: "redo"})
-
-  const uiMoveList = state.history.current < state.history.moves.length ?
-    state.history.uiMoveList.slice(0, state.history.current) :
-    state.history.uiMoveList
+  const uiMoveList = state.moves.current >= 0 ? state.moves.uiList.slice(0, state.moves.current + 1) : null
 
 
   return (
     <div className={styles.body}>
       <div className={styles.tmp} style={{background: isCheck[0] ? 'red' : 'green'}}></div>
       <div className={styles.tmp} style={{background: isCheck[1] ? 'red' : 'green'}}></div>
+      <div className={styles.tmp} onClick={handleUndo}>UNDO</div>
 
       {
         state.winner ?
@@ -494,16 +533,19 @@ export default function App() {
         <div className={styles.sidebar}>
           <ul className={styles.movesList}>
           {
-          uiMoveList ? uiMoveList.map((move, i) =>
-            <li className={styles.sMove} key={i}>
+          uiMoveList ? uiMoveList.map(move =>
+            <li className={styles.sMove} key={move}>
               <h4>{move}</h4>
             </li>
           ) : null
           }
+            {/* <li className={styles.sMove}>
+              <h4>e2 - e4</h4>
+            </li> */}
           </ul>
 
           <div className={styles.ctrlsCont}>
-            <button className={`${styles.ctrlBtn} ${styles.ctrlBtnUndo}`} onClick={handleUndo}>
+            <button className={`${styles.ctrlBtn} ${styles.ctrlBtnUndo}`}>
               undo
             </button>
 

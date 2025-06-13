@@ -10,7 +10,7 @@ export default function Field({ row, col, piece, selected, isAvailable, dispatch
         e.preventDefault()
 
         if(isAvailable) {
-            dispatch({ type: "move_piece", payload: [row, col] })
+            dispatch({ type: "move_piece", payload: [[row, col]] })
         } else if(piece) {
             dispatch({ type: "select_piece", payload: piece ? [piece, [row, col]] : null })
         } else {
@@ -37,7 +37,7 @@ export default function Field({ row, col, piece, selected, isAvailable, dispatch
 
             {
             col === 0 ?
-                <span className={`${styles.mark} ${styles.rowMark}`}>{row + 1}</span> :
+                <span className={`${styles.mark} ${styles.rowMark}`}>{8 - row}</span> :
                 null
             }
 
