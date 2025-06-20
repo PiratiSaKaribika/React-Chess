@@ -1,0 +1,15 @@
+
+.body {
+    /* display: flex;
+    column-gap: 4px; */
+}
+
+.sPiece {
+    /* width: 64px; */
+    border: 1px solid red;
+    height: 64px;
+}
+.sPiece > :first-child {
+    width: 32px;
+    height: 32px;
+}

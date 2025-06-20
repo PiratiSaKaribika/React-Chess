@@ -4,6 +4,7 @@ import styles from './App.module.css'
 // Components
 import Field from './Field';
 import Promotion from './components/Promotion';
+import CapturedPieces from './components/CapturedPieces';
 
 // Utils and Assets
 import { board } from './boardDefault';
@@ -71,10 +72,8 @@ const reducer = (state, action) => {
 
     // Get available positions for king (if selected)
     const kingEscapePositions = piece.slice(1) === 'ki' ?
-      isCheck ?
-      rawPositions.filter(pos => !getIsCapturable(pos, side, isOccupied, getIsOccupiedBy, getPieceByPos, false, true)) :
       rawPositions.filter(pos => !getIsCapturable(pos, side, isOccupied, getIsOccupiedBy, getPieceByPos)) :
-      null
+      []
 
     
     // Get final available positions
@@ -133,12 +132,13 @@ const reducer = (state, action) => {
   const updateMoveHistory = (oldMove, newMove) => {
     const getUiMove = pos => String.fromCharCode(pos[1] + 65) + (8 - pos[0])
     
+    // Remove future moves ("rewriting" history)
     if(state.history.current < state.history.moves.length) {
-      alert("CUT")
       state.history.moves = state.history.moves.slice(0, state.history.current)
       state.history.info = state.history.info.slice(0, state.history.current)
       state.history.uiMoveList = state.history.uiMoveList.slice(0, state.history.current)
     }
+
     
     state.history.uiMoveList.push([getUiMove(oldMove.pos), getUiMove(newMove.pos)].join('-'))
     state.history.moves.push([oldMove, newMove])
@@ -148,7 +148,9 @@ const reducer = (state, action) => {
       winner: state.winner,
       promotion: state.promotion,
       kingPos: state.kingPos,
-      castlingAllowed: state.castlingAllowed
+      castlingAllowed: state.castlingAllowed,
+      lastPlayed: state.prevLastPlayed,
+      captured: state.prevCaptured
     })))
   }
 
@@ -200,7 +202,7 @@ const reducer = (state, action) => {
   }
 
 
-  // Update all the state logic after played move - mate, stalemate and switch turn
+  // Update all the state logic after played move - mate, stalemate, switch turn and latest move (hisotry)
   const updateBundle = () => {
     updateCheckAndPin('w'); 
     updateCheckAndPin('b');
@@ -211,7 +213,8 @@ const reducer = (state, action) => {
       winner: state.winner,
       promotion: state.promotion,
       kingPos: state.kingPos,
-      castlingAllowed: state.castlingAllowed
+      castlingAllowed: state.castlingAllowed,
+      captured: state.captured
     }))
 
     switchTurn()
@@ -236,7 +239,8 @@ const reducer = (state, action) => {
   }
 
 
-
+  // console.log(state.history.moves)
+  // console.log(state.history.current)
 
 
   switch(action.type) {
@@ -254,6 +258,7 @@ const reducer = (state, action) => {
 
 
       const availablePos = getAvailablePostions(position, piece)
+      // console.log(position, piece)
 
       availablePos.forEach(aPos => state.board[aPos[0]][aPos[1]].isAvailable = true)
       return {...state, selected: position}
@@ -282,9 +287,22 @@ const reducer = (state, action) => {
         state.board[newPos[0]][col == 3 ? 0 : 7].piece = ''
       }
 
+
       if(sPiece) { // Prevent strict mode from removing the piece from new position
+
+        // Keep track of captured pieces
+        state.prevCaptured = state.captured ? JSON.parse(JSON.stringify(state.captured)) : null
+        const capturedPiece = state.board[newPos[0]][newPos[1]].piece ? state.board[newPos[0]][newPos[1]].piece.slice(1) : null
+        if(capturedPiece) {
+          state.captured[side === 'w' ? 0 : 1][capturedPiece] += 1
+        }
+
+
         state.board[newPos[0]][newPos[1]].piece = sPiece // Set selected piece to new position
         state.board[oldPos[0]][oldPos[1]].piece = '' // Remove selected piece from old position
+
+        state.prevLastPlayed = JSON.parse(JSON.stringify(state.lastPlayed))
+        state.lastPlayed = [oldPos, newPos] // Update last played highlight (old and new field)
 
 
         // Disable castling if king or rook moved
@@ -326,13 +344,14 @@ const reducer = (state, action) => {
         ...state,
         history: {...state.history, current: index},
         ...info,
+        selected: null,
         isWhiteTurn: !state.isWhiteTurn,
         board: state.board.map((rank, row) => rank.map((field, col) => 
           comparePos([row, col], oldMove.pos) ?
-            {...field, piece: oldMove.piece} :
+            {...field, piece: oldMove.piece, isAvailable: false} :
           comparePos([row, col], newMove.pos) ?
-            {...field, piece: newMove.piece} :
-          field
+            {...field, piece: newMove.piece, isAvailable: false} :
+          {...field, isAvailable: false}
         ))
       }
     }
@@ -350,13 +369,14 @@ const reducer = (state, action) => {
         ...state,
         history: {...state.history, current: index + 1},
         ...info,
+        selected: null,
         isWhiteTurn: !state.isWhiteTurn,
         board: state.board.map((rank, row) => rank.map((field, col) => 
           comparePos([row, col], newMove.pos) ?
-            {...field, piece: oldMove.piece} :
+            {...field, piece: oldMove.piece, isAvailable: false} :
           comparePos([row, col], oldMove.pos) ?
-            {...field, piece: ''} :
-          field
+            {...field, piece: '', isAvailable: false} :
+          {...field, isAvailable: false}
         ))
       };
     }
@@ -370,6 +390,10 @@ const reducer = (state, action) => {
     
       modifyFieldPiece(pos, piece);
       state.promotion = {};
+
+      const [_, newMove] = state.history.moves[state.history.moves.length - 1]
+
+      updateMoveHistory({...newMove, piece}, {...newMove, piece: 'wp'})
       updateBundle()
       
       return {...state};
@@ -384,6 +408,7 @@ const reducer = (state, action) => {
 export default function App() {
   const [state, dispatch] = useReducer(reducer, {
     board,
+    lastPlayed: null,
     selected: null,
     isWhiteTurn: true,
     castlingAllowed: [[true, true], [true, true]], // Is Castling allowed [white: [left. right], black: [left, right]]
@@ -397,20 +422,27 @@ export default function App() {
       current: 0, // Current move index in history
       info: [], // [ {castlingAllowed, checkInfo, promotion, kingPos, winner}, ... ]
       last: null // Latest move info (made this way to avoid bugs)
-    }
+    },
+    captured: [
+      {p: 0, r: 0, k: 0, b: 0, q: 0},
+      {p: 0, r: 0, k: 0, b: 0, q: 0}
+    ],
+    prevCaptured: [],
+    prevLastPlayed: null,
   })
 
 
   const isCheck = state.checkInfo.map(obj => obj.check.length ? true : false)
+  
+  const uiMoveList = state.history.current < state.history.moves.length ?
+    state.history.uiMoveList.slice(0, state.history.current) :
+    state.history.uiMoveList
+
 
   const handlePromote = (pos, piece) => dispatch({type: "promote_pawn", payload: {pos, piece}})
 
   const handleUndo = () => dispatch({type: "undo"})
   const handleRedo = () => dispatch({type: "redo"})
-
-  const uiMoveList = state.history.current < state.history.moves.length ?
-    state.history.uiMoveList.slice(0, state.history.current) :
-    state.history.uiMoveList
 
 
   return (
@@ -434,7 +466,7 @@ export default function App() {
         <div className={styles.game}>
           <div className={styles.playerInfo}>
             <div className={styles.capturedPieces}>
-              PLACEHOLDER
+              <CapturedPieces side='b' pieces={state.captured[1]} />
             </div>
 
             <div className={styles.timer}>
@@ -456,6 +488,7 @@ export default function App() {
                       col={j}
                       piece={col.piece}
                       selected={state.selected}
+                      lastPlayed={state.lastPlayed}
                       isAvailable={col.isAvailable}
                       dispatch={dispatch}
                     />
@@ -480,7 +513,7 @@ export default function App() {
 
           <div className={styles.playerInfo}>
             <div className={styles.capturedPieces}>
-              PLACEHOLDER
+              <CapturedPieces side='w' pieces={state.captured[0]} />
             </div>
 
             <div className={styles.timer}>

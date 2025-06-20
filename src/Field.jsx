@@ -1,10 +1,11 @@
 import styles from './Field.module.css'
 import { PieceImg } from './assets/PieceImg'
 
-export default function Field({ row, col, piece, selected, isAvailable, dispatch }) {
+export default function Field({ row, col, piece, selected, lastPlayed, isAvailable, dispatch }) {
     
     const isSelected = selected ? (selected[0] == row && selected[1] == col) ? true : false : false
-    const letter = row === 7 ? Number.toString(col) : null
+    const isLastPlayed = lastPlayed ? lastPlayed.find(pos => pos[0] === row && pos[1] === col) : false
+    // const letter = row === 7 ? Number.toString(col) : null
     
     const clickHandler = e => {
         e.preventDefault()
@@ -22,6 +23,7 @@ export default function Field({ row, col, piece, selected, isAvailable, dispatch
 
     // Field style object calculation
     const style = {}
+    if(isLastPlayed) { style.background = "green" }
     if(isSelected) { style.background = "red" }
     if(isAvailable) { style.background = "yellow" }
     

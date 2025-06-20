@@ -59,7 +59,6 @@ const isInBounds = (x, y) => x <= 7 && x >= 0 && y <= 7 && y >=0
 export const getCapturableBy = (piece, pos, isOccupied, getIsOccupiedBy) => {
     const pieceId = piece.slice(1)
     let pinPos, isCapturable, obstacleCount = 0, checkingPiecePos, available = [];
-    // function clearRes() { pinnedPos = null; isCapturable = null; obstacleCount = 0; }
 
     let [row, col] = pos;
     
@@ -72,11 +71,6 @@ export const getCapturableBy = (piece, pos, isOccupied, getIsOccupiedBy) => {
 
 
         while(x <= 7 && x >= 0 && y <= 7 && y >=0) {
-            // if(piece == 'bq' && op[0] == -1 && op[1] == 0) {
-            //     console.log("\nX: " + x)
-            //     console.log("\nY: " + y + '\n')
-            // }
-
             if(!isFirst) {
                 if(obstacleCount >= 2) { obstacleCount = 0; return; }
                 available.push([x, y])
@@ -106,11 +100,9 @@ export const getCapturableBy = (piece, pos, isOccupied, getIsOccupiedBy) => {
             y += op[1]
         }
         
-        // if(obstacleCount >= 2) { pinnedPos = null; }
         obstacleCount = 0
     })
 
-    // return {isCapturable, pinned: {pinPos, available}, checkingPiecePos};
     return {capturable: {isCapturable, available}, pinned: {pinPos, available}, checkingPiecePos};
 }
 
@@ -138,7 +130,6 @@ export const getCapturableByPawnPositions = (pos, side, getPieceByPos) => {
 
 export const getIsCapturable = (pos, side, isOccupied, getIsOccupiedBy, getPieceByPos, excludeKing, isKing) => {
     const opSide = side === 'w' ? 'b' : 'w'
-    // if(getCapturableByPawnPositions(pos, side, getPieceByPos)) {console.log("AAA"); console.log(pos); console.log("AAA"); return true}
     if(getCapturableByPawnPositions(pos, side, getPieceByPos)) { return true }
     
     const [row, col] = pos;
@@ -159,13 +150,11 @@ export const getIsCapturable = (pos, side, isOccupied, getIsOccupiedBy, getPiece
                 
                 if(isOccupied([x, y], side) !== 0) {
                     if(getIsOccupiedBy([x, y], opSide + piece)) {
-                        if(piece === 'ki' && getIsCapturable(pos, opSide, isOccupied, getIsOccupiedBy, getPieceByPos)) return
+                        if(piece === 'ki' && getIsCapturable(pos, opSide, isOccupied, getIsOccupiedBy, getPieceByPos, true)) return
                         isCapturable = true;
-                        // console.log(opSide + piece)
                         return; 
                     }
-                    else if(!isKing || !getPieceByPos(pos) === (side + 'ki')) { break; } 
-                    // else { break; }
+                    else if(!isKing || !getPieceByPos(pos) === (side + 'ki')) { break; }
                 }
 
                 if(piece === 'k' || piece === 'ki') { break; }
