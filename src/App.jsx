@@ -1,4 +1,4 @@
-import { useReducer, useMemo } from 'react'
+import { useReducer, useState, useRef, useEffect } from 'react'
 import styles from './App.module.css'
 
 // Components
@@ -93,6 +93,80 @@ const reducer = (state, action) => {
 
     
     return availablePos
+  }
+
+
+  const getEnPassantPos = (position, piece) => {
+    const [row, col] = position;
+    const side = piece[0]
+    const opSide = side === 'w' ? 'b' : 'w'
+    
+    const sideIndex = side === 'w' ? 0 : 1
+    // const opSideIndex = sideIndex ? 0 : 1
+    const directionOp = sideIndex ? 1 : -1 // Direction (row operation) for player side pawn (e.g. +/-)
+
+    // const pawnInitRowPos = [6, 1] // Initial row positions for pawns [white, black]
+    const sufficientRow = side === 'w' ? 3 : 4
+    
+    const opColsArr = [col - 1, col + 1].filter(x => (x >= 0 && x <= 7)) // Opponent potential pawn positions
+    // const opCol = opColsArr[0]
+
+    let resRow, resCol;
+    
+    
+    
+    // Check if piece is pawn and row is sufficient
+    if(piece.slice(1) !== 'p' || row !== sufficientRow) return;
+
+
+
+    // Check if conditions for oponnent are met
+    opColsArr.forEach(opCol => {
+      // Check if opponent pawn next to position
+      if(state.board[row][opCol].piece.slice(1) !== 'p') return;
+      
+  
+      // Check if last played move was oponnent's pawn to adequate position
+      const [oldMove, newMove] = state.history.moves[state.history.current - 1]
+  
+      if(
+        oldMove.piece !== opSide + 'p' ||
+        !comparePos(newMove.pos, [sufficientRow, opCol])
+      ) return;
+
+      resCol = opCol;
+    })
+
+    if(!resCol) return; // Return if oponnent's piece not found or last played
+
+
+
+    // Check if last move including en passant pawn was adequate
+    const [oldMove] = state.history.moves.findLast(move => comparePos(move[1].pos, position))
+    if(
+      !oldMove ||
+      oldMove.piece !== side + 'p' ||
+      !comparePos(oldMove.pos, [row + (1 * directionOp * -1), col])
+    ) return;
+    
+
+
+    // Check if second to last move including en passant pawn was adequate
+    const [prevOldMove] = state.history.moves.findLast(move => comparePos(move[1].pos, oldMove.pos))
+    if(
+      !prevOldMove ||
+      prevOldMove.piece !== side + 'p' ||
+      !comparePos(prevOldMove.pos, [row + (3 * directionOp * -1), col])
+    ) return;
+
+
+
+    // If all conditions are met, return en passant position
+    resRow = row + (1 * directionOp)
+    const enPassantPos = [resRow, resCol]
+
+    state.enPassantPos = enPassantPos
+    return enPassantPos;
   }
 
 
@@ -238,9 +312,14 @@ const reducer = (state, action) => {
     return isPromotion
   }
 
+  const updatePerformEnPassant = side => {
+    const [row, col] = state.enPassantPos;
+    const capturedRow = row + (side === 'w' ? 1 : -1)
 
-  // console.log(state.history.moves)
-  // console.log(state.history.current)
+    state.board[capturedRow][col].piece = ""
+  }
+
+
 
 
   switch(action.type) {
@@ -258,7 +337,8 @@ const reducer = (state, action) => {
 
 
       const availablePos = getAvailablePostions(position, piece)
-      // console.log(position, piece)
+      const enPassantPos = getEnPassantPos(position, piece)
+      if(enPassantPos) availablePos.push(enPassantPos)
 
       availablePos.forEach(aPos => state.board[aPos[0]][aPos[1]].isAvailable = true)
       return {...state, selected: position}
@@ -303,6 +383,10 @@ const reducer = (state, action) => {
 
         state.prevLastPlayed = JSON.parse(JSON.stringify(state.lastPlayed))
         state.lastPlayed = [oldPos, newPos] // Update last played highlight (old and new field)
+
+        if(state.enPassantPos && sPiece.slice(1) === 'p' && comparePos(newPos, state.enPassantPos)) {
+          updatePerformEnPassant(side);
+        }
 
 
         // Disable castling if king or rook moved
@@ -384,6 +468,16 @@ const reducer = (state, action) => {
 
 
 
+    case "timeout": {
+      const index = action.payload
+      const winner = index === 0 ? 'b' : 'w'
+
+      return {...state, winner}
+    }
+
+
+
+
     case "promote_pawn": {
       if(!Object.keys(state.promotion).length) return {...state}; // Prevent strict mode
       const {pos, piece} = action.payload;
@@ -429,7 +523,41 @@ export default function App() {
     ],
     prevCaptured: [],
     prevLastPlayed: null,
+    enPassantPos: null
   })
+
+
+
+  // TIMER
+  
+  const [timersValues, setTimersValues] = useState([600, 600])
+  const checkTimeout = (index, value) => {
+    if(value > 0) return;
+    dispatch({type: "timeout", payload: index})
+  }
+
+  const decrementTimer = () => setTimersValues(prev => {
+    const index = state.isWhiteTurn ? 0 : 1;
+    const newVal = prev[index] - 1;
+
+    checkTimeout(index, newVal)
+    const result = [...prev]
+    result[index] = newVal;
+
+    return result
+  })
+
+  const getFormattedTimerValue = index => {
+    const raw = timersValues[index]
+
+    const minutes = Number.parseInt(raw / 60)
+    const seconds = raw % 60
+    return minutes + ":" + seconds + (seconds === 0 ? "0" : "");
+  }
+
+  const timer = useRef(null)
+
+
 
 
   const isCheck = state.checkInfo.map(obj => obj.check.length ? true : false)
@@ -443,6 +571,33 @@ export default function App() {
 
   const handleUndo = () => dispatch({type: "undo"})
   const handleRedo = () => dispatch({type: "redo"})
+
+
+
+
+  // Timer useEffect
+  
+  useEffect(() => {
+    const handleInterval = () => {
+      if(state.winner) {
+        clearInterval(timer.current)
+        timer.current = null
+        return;
+      }
+
+      if(!timer.current) {
+        timer.current = setInterval(() => decrementTimer(), 1000)
+      }
+    }
+
+
+    handleInterval();
+
+    return () => {
+      clearInterval(timer.current)
+      timer.current = null
+    }
+  }, [state.isWhiteTurn, state.winner])
 
 
   return (
@@ -471,7 +626,7 @@ export default function App() {
 
             <div className={styles.timer}>
               <h4 className={styles.timerContent}>
-                10:00
+                {getFormattedTimerValue(1)}
               </h4>
             </div>
           </div>
@@ -518,7 +673,7 @@ export default function App() {
 
             <div className={styles.timer}>
               <h4 className={styles.timerContent}>
-                10:00
+                {getFormattedTimerValue(0)}
               </h4>
             </div>
           </div>
