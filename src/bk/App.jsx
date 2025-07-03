@@ -20,6 +20,12 @@ function deepClone(obj) {
 
 const reducer = (state, action) => {
   const getPieceByPos = pos => state.board[pos[0]][pos[1]].piece
+  // const getPieceByPos = pos => { 
+  //   if(typeof state.board[pos[0]] == 'undefined') {
+  //     console.log(pos);
+  //   }
+  //   state.board[pos[0]][pos[1]].piece
+  // }
   
   const comparePos = (pos1, pos2) => pos1[0] == pos2[0] && pos1[1] == pos2[1]
 
@@ -96,11 +102,14 @@ const reducer = (state, action) => {
     const opSide = side === 'w' ? 'b' : 'w'
     
     const sideIndex = side === 'w' ? 0 : 1
+    // const opSideIndex = sideIndex ? 0 : 1
     const directionOp = sideIndex ? 1 : -1 // Direction (row operation) for player side pawn (e.g. +/-)
 
+    // const pawnInitRowPos = [6, 1] // Initial row positions for pawns [white, black]
     const sufficientRow = side === 'w' ? 3 : 4
     
     const opColsArr = [col - 1, col + 1].filter(x => (x >= 0 && x <= 7)) // Opponent potential pawn positions
+    // const opCol = opColsArr[0]
 
     let resRow, resCol;
     
@@ -200,7 +209,7 @@ const reducer = (state, action) => {
     // Remove future moves ("rewriting" history)
     if(state.history.current < state.history.moves.length) {
       state.history.moves = state.history.moves.slice(0, state.history.current)
-      state.history.other = state.history.other.slice(0, state.history.current)
+      state.history.info = state.history.info.slice(0, state.history.current)
       state.history.uiMoveList = state.history.uiMoveList.slice(0, state.history.current)
     }
 
@@ -208,12 +217,14 @@ const reducer = (state, action) => {
     state.history.uiMoveList.push([getUiMove(oldMove.pos), getUiMove(newMove.pos)].join('-'))
     state.history.moves.push([oldMove, newMove])
     state.history.current += 1;
-    state.history.other.push(JSON.parse(JSON.stringify({
-      checkInfo: deepClone(state.checkInfo),
+    state.history.info.push(JSON.parse(JSON.stringify({
+      checkInfo: state.checkInfo,
       winner: state.winner,
       promotion: state.promotion,
       kingPos: state.kingPos,
-      captured: state.captured,
+      castlingAllowed: state.castlingAllowed,
+      lastPlayed: state.prevLastPlayed,
+      captured: state.prevCaptured
     })))
   }
 
@@ -271,7 +282,14 @@ const reducer = (state, action) => {
     updateCheckAndPin('b');
     updateIsStalemate()
 
-
+    state.history.last = JSON.parse(JSON.stringify({
+      checkInfo: state.checkInfo,
+      winner: state.winner,
+      promotion: state.promotion,
+      kingPos: state.kingPos,
+      castlingAllowed: state.castlingAllowed,
+      captured: state.captured
+    }))
 
     switchTurn()
   }
@@ -299,10 +317,6 @@ const reducer = (state, action) => {
     const capturedRow = row + (side === 'w' ? 1 : -1)
 
     state.board[capturedRow][col].piece = ""
-    state.history.enPassant.push({
-      current: state.history.current,
-      pos: [capturedRow, col]
-    })
   }
 
 
@@ -357,6 +371,7 @@ const reducer = (state, action) => {
       if(sPiece) { // Prevent strict mode from removing the piece from new position
 
         // Keep track of captured pieces
+        state.prevCaptured = state.captured ? JSON.parse(JSON.stringify(state.captured)) : null
         const capturedPiece = state.board[newPos[0]][newPos[1]].piece ? state.board[newPos[0]][newPos[1]].piece.slice(1) : null
         if(capturedPiece) {
           state.captured[side === 'w' ? 0 : 1][capturedPiece] += 1
@@ -366,6 +381,7 @@ const reducer = (state, action) => {
         state.board[newPos[0]][newPos[1]].piece = sPiece // Set selected piece to new position
         state.board[oldPos[0]][oldPos[1]].piece = '' // Remove selected piece from old position
 
+        state.prevLastPlayed = JSON.parse(JSON.stringify(state.lastPlayed))
         state.lastPlayed = [oldPos, newPos] // Update last played highlight (old and new field)
 
         if(state.enPassantPos && sPiece.slice(1) === 'p' && comparePos(newPos, state.enPassantPos)) {
@@ -386,16 +402,12 @@ const reducer = (state, action) => {
         // Update king state position
         if(sPiece.slice(1) == 'ki') { state.kingPos[side == 'w' ? 0 : 1] = newPos }
 
+        updateMoveHistory(oldMove, newMove)
         
         clearAvailable() // Clear available positions
 
-        if(updatePromotion()) { 
-          state.test = [oldMove, newMove]
-          return {...state} 
-        }
-
+        if(updatePromotion()) { return {...state} }
         updateBundle()
-        updateMoveHistory(oldMove, newMove)
       }
 
       return {...state, selected: null} // Update state and deselect position
@@ -404,72 +416,53 @@ const reducer = (state, action) => {
 
 
 
+
     case "undo": {
-      const current = state.history.current - 1;
-      if(current < 0) { return state; }
+      const index = state.history.current - 1;
+      if(index < 0) return state;
 
-      const [oldMove, newMove] = state.history.moves[current]
-      const other = current ? state.history.other[current - 1] : {}
-      const lastPlayed = current ?
-        state.history.moves[current - 1].map(move => move.pos) : 
-        [oldMove.pos, newMove.pos]
-
-      const enPassant = state.history.enPassant.find(obj => obj.current == current)
-      const enPassantPiece = (state.isWhiteTurn ? "w" : "b") + "p"
-
+      const [oldMove, newMove] = state.history.moves[index]
+      const info = state.history.info[index]
 
       return {
         ...state,
-        ...other,
-        lastPlayed,
+        history: {...state.history, current: index},
+        ...info,
+        selected: null,
         isWhiteTurn: !state.isWhiteTurn,
-        history: {
-          ...state.history,
-          current: state.history.current - 1
-        },
-        promotion: {},
         board: state.board.map((rank, row) => rank.map((field, col) => 
           comparePos([row, col], oldMove.pos) ?
             {...field, piece: oldMove.piece, isAvailable: false} :
           comparePos([row, col], newMove.pos) ?
             {...field, piece: newMove.piece, isAvailable: false} :
-          (enPassant && comparePos([row, col], enPassant.pos)) ?
-            {...field, piece: enPassantPiece, isAvailable: false} :
           {...field, isAvailable: false}
         ))
       }
     }
 
     case "redo": {
-      const current = state.history.current;
-      if(current > state.history.moves.length - 1) { return state; }
-
-      const [oldMove, newMove] = state.history.moves[current]
-      const other = state.history.other[current]
-      const lastPlayed = [oldMove.pos, newMove.pos]
-
-      const enPassant = state.history.enPassant.find(obj => obj.current == current)
-
+      const index = state.history.current
+      if(index > state.history.moves.length - 1) return state;
       
-        return {
+      const isLastMove = index === state.history.moves.length - 1
+
+      const [oldMove, newMove] = state.history.moves[index]
+      const info = isLastMove ? state.history.last : state.history.info[index + 1]
+
+      return {
         ...state,
-        ...other,
-        lastPlayed,
+        history: {...state.history, current: index + 1},
+        ...info,
+        selected: null,
         isWhiteTurn: !state.isWhiteTurn,
-        history: {
-          ...state.history,
-          current: state.history.current + 1
-        },
         board: state.board.map((rank, row) => rank.map((field, col) => 
           comparePos([row, col], newMove.pos) ?
             {...field, piece: oldMove.piece, isAvailable: false} :
           comparePos([row, col], oldMove.pos) ?
-            {...field, piece: "", isAvailable: false} :
-          (enPassant && comparePos([row, col], enPassant.pos)) ?
-            {...field, piece: "", isAvailable: false} :
+            {...field, piece: '', isAvailable: false} :
           {...field, isAvailable: false}
         ))
-      }
+      };
     }
 
 
@@ -490,15 +483,12 @@ const reducer = (state, action) => {
       const {pos, piece} = action.payload;
     
       modifyFieldPiece(pos, piece);
-      
-      // const [_, newMove] = state.history.moves[state.history.moves.length - 1]
-      
-      // updateMoveHistory({...newMove, piece}, {...newMove, piece: 'wp'})
-      updateBundle()
-      
-      const [oldMove, newMove] = state.test
-      updateMoveHistory(oldMove, newMove)
       state.promotion = {};
+
+      const [_, newMove] = state.history.moves[state.history.moves.length - 1]
+
+      updateMoveHistory({...newMove, piece}, {...newMove, piece: 'wp'})
+      updateBundle()
       
       return {...state};
     }
@@ -524,18 +514,16 @@ export default function App() {
       uiMoveList: [],
       moves: [], // [[{oldPos, piece}, {newPos, piece}], ...]
       current: 0, // Current move index in history
-      other: [], // [ {castlingAllowed, checkInfo, promotion, kingPos, winner}, ... ]
-      enPassant: [] // Keep track of en passants to handle history 
-      // last: null, // Latest move info (made this way to avoid bugs),
+      info: [], // [ {castlingAllowed, checkInfo, promotion, kingPos, winner}, ... ]
+      last: null // Latest move info (made this way to avoid bugs)
     },
     captured: [
       {p: 0, r: 0, k: 0, b: 0, q: 0},
       {p: 0, r: 0, k: 0, b: 0, q: 0}
     ],
     prevCaptured: [],
-    // prevLastPlayed: null,
-    enPassantPos: null,
-    test: null
+    prevLastPlayed: null,
+    enPassantPos: null
   })
 
 
