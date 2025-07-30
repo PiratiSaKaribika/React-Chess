@@ -1,0 +1,36 @@
+.ctrlBtn {
+    width: 100%;
+
+    display: flex;
+    justify-content: center;
+    column-gap: 8px;
+
+    padding: 8px 0;
+    
+    background: var(--primary-400);
+    border-radius: 4px;
+}
+.ctrlBtn:hover { background: var(--primary-400-90); }
+
+.ctrlBtnIcon {
+    display: block;
+    width: 24px;
+    height: 24px;
+
+    color: var(--primary-200);
+}
+
+.ctrlBtnTxt { color: var(--primary-100); }
+
+
+
+@media(max-width: 480px) {
+    .ctrlBtn {
+        /* padding: 4px 0; */
+    }
+}
+@media(max-width: 360px) {
+    .ctrlBtn {
+        padding: 4px 4px;
+    }
+}

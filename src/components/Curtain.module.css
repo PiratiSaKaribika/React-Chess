@@ -1,0 +1,53 @@
+.curtain {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+
+    backdrop-filter: blur(1px);
+    z-index: 8;
+}
+
+
+.box {
+    width: 75%;
+
+    position: absolute;
+    left: 50%;
+    top: 45%;
+    transform: translate(-50%, -50%);
+    
+    border-radius: 4px;    
+
+    padding: 24px 48px 40px;
+    text-align: center;
+
+    background: var(--gray-100);
+    box-shadow: 0 1px 12px 2px var(--gray-900-70);
+    
+    z-index: 9;
+}
+
+.timerOptions {
+    padding-top: 64px;
+
+    display: flex;
+    column-gap: 12px;
+}
+
+
+
+@media(max-width: 480px) {
+    .box {
+        width: 95%;
+        padding: 24px 48px 40px;
+        padding: 16px 24px 20px;
+    }
+
+    .timerOptions {
+        justify-content: space-between;
+        column-gap: 4px;
+    }
+}

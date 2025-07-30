@@ -1,0 +1,70 @@
+.field {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    
+    position: relative;
+}
+
+.img {
+    display: inline-block;
+    
+    width: 100%;
+    height: 100%;
+
+    padding: 4px;
+}
+
+
+
+/* Field selected */
+
+.field::before {
+    display: none;
+    content: '';
+
+    /* width: 32px; */
+    width: 33%;
+    aspect-ratio: 1 / 1;
+    background: var(--gray-700-70);
+    border-radius: 50%;
+
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+.fieldAvailable::before {
+    display: block;
+}
+
+
+
+/* Marks (1-8, a-h) */
+.mark {
+    position: absolute;
+    color: var(--primary-300);
+    
+    -webkit-touch-callout: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+}
+
+.rowMark {
+    top: 2px;
+    left: 2px;
+}
+
+.colMark {
+    bottom: 2px;
+    right: 2px;
+}
+
+
+
+@media(max-width: 480px) {
+    .mark {
+        font-size: 12px;
+    }
+}
+

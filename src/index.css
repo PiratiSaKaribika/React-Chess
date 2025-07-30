@@ -1,5 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
 :root {
   --board-width: 620px;
+  --board-width-md: 480px;
+  --board-width-sm: 360px;
+
+  --primary-100: #F7F3F4;
+  --primary-200: #D6C0B3;
+  --primary-300: #AB886D;
+  --primary-400: #493628;
+  --primary-400-75: #493628BF;
+  --primary-400-90: #493628E6;
+
+  --prev-white: #A8CC4E;
+  --prev-black: #7F993D;
+
+  /* --selected-white: #F2BA79; */
+  --selected-white: #C7822E;
+  --selected-black: #C77614;
+
+  --alert: #e02343;
+
+  --gray-100: #F2EEEB;
+  --gray-200: #D1D0CF;
+  --gray-300: #A9A7A6;
+  --gray-400: #999694;
+  --gray-500: #797573;
+  --gray-500-25: #79757340;
+  --gray-600: #605C59;
+  --gray-700: #494440;
+  --gray-700-25: #49444040;
+  --gray-700-70: #494440B3;
+  --gray-800: #302A26;
+  --gray-900: #19130E;
+  --gray-900-25: #19130E40;
+  --gray-900-70: #19130EB3;
 }
 
 * {
@@ -12,9 +47,73 @@ body {
   background: #f5f3f3;
 }
 
-svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
+svg { min-width: 100%; min-height: 100%; max-width: 100%; max-height: 100%; }
+span { display: block; }
 
+
+
+
+
+/* Elements overwrite */
+
+a {
+  text-decoration: none;
+  color: unset;
+}
 
 li {
   list-style: none;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+
+
+
+
+/* Typography */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+h1 { font-size: 62px; line-height: 66px; }
+h2 { font-size: 48px; line-height: 52px; }
+h3 { font-size: 40px; line-height: 44px; }
+h4 { font-size: 32px; line-height: 36px; }
+h5 { font-size: 26px; line-height: 30px; }
+h6 { font-size: 20px; line-height: 24px; }
+
+p {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 24px;
+
+  color: var(--gray-900);
+}
+.p-16 {
+  font-size: 16px;
+  line-height: 20px;
+}
+
+
+@media(max-width: 960px) {
+  h1 { font-size: 48px; line-height: 52px; }
+  h2 { font-size: 40px; line-height: 44px; }
+  h3 { font-size: 32px; line-height: 36px; }
+  h4 { font-size: 26px; line-height: 30px; }
+  h5 { font-size: 20px; line-height: 24px; }
+  h6 { font-size: 16px; line-height: 24px; }
+  
+  p {
+    font-size: 16px;
+    line-height: 20px;
+  }
 }

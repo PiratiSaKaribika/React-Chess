@@ -8,103 +8,8 @@ const operations = {
 
 const isInBounds = (x, y) => x <= 7 && x >= 0 && y <= 7 && y >=0
 
-// Get is capturable by specific piece and pinned positions
-// export const getCapturableBy = (piece, pos, isOccupied, getIsOccupiedBy) => {
-//     const pieceId = piece.slice(1)
-//     let pinnedPos, isCapturable, obstacleCount = 0;
-
-//     let [row, col] = pos;
-    
-//     operations[pieceId].forEach(op => {
-//         if(isCapturable) { return; }
-
-//         let x = row, y = col;
-//         let isFirst = true;
 
 
-//         while(x <= 7 && x >= 0 && y <= 7 && y >=0) {
-//             if(!isFirst) {
-//                 if(getIsOccupiedBy([x, y], piece) && obstacleCount == 0) { isCapturable = true; return; }
-//                 if(obstacleCount >= 1) { isCapturable = false; break; }
-                
-//                 const occupied = isOccupied([x, y], piece[0])
-
-//                 if(occupied == 1) { obstacleCount += 1; }
-//                 else if(occupied === -1) {
-//                     if(obstacleCount) { pinnedPos = null; break; }
-//                     pinnedPos = [x, y];
-//                     obstacleCount += 1;
-
-//                     console.log(pinnedPos)
-//                 }
-                
-//                 if(pieceId == 'k') { break; }
-//             }
-//             else { isFirst = false } // exclude selected position
-
-//             x += op[0]
-//             y += op[1]
-//         }
-        
-//         if(obstacleCount >= 2) { pinnedPos = null; }
-//         obstacleCount = 0
-//     })
-//     if(!isCapturable) { pinnedPos = null; }
-
-//     return {isCapturable, pinnedPos};
-// }
-
-
-// Get is capturable by specific piece and pinned positions
-export const getCapturableBy = (piece, pos, isOccupied, getIsOccupiedBy) => {
-    const pieceId = piece.slice(1)
-    let pinPos, isCapturable, obstacleCount = 0, checkingPiecePos, available = [];
-
-    let [row, col] = pos;
-    
-    operations[pieceId].forEach(op => {
-        if(isCapturable || pinPos) { return; }
-
-        let tmpPin;
-        let x = row, y = col;
-        let isFirst = true;
-
-
-        while(x <= 7 && x >= 0 && y <= 7 && y >=0) {
-            if(!isFirst) {
-                if(obstacleCount >= 2) { obstacleCount = 0; return; }
-                available.push([x, y])
-                const occupied = isOccupied([x, y], piece[0])
-
-                if(occupied === 1) { 
-                    if(getIsOccupiedBy([x, y], piece)) {
-                        if(!obstacleCount) { isCapturable = true; checkingPiecePos = [x, y]; return; }
-
-                        pinPos = tmpPin;
-                        obstacleCount = 0;
-                        return;
-                    }
-
-                    isCapturable = null; obstacleCount = 0; tmpPin = 0; return; 
-                }
-                if(occupied === -1) {
-                    tmpPin = [x, y];
-                    obstacleCount++;
-                }
-
-                if(pieceId == 'k') { break; }
-            }
-            else { isFirst = false } // exclude selected position
-
-            x += op[0]
-            y += op[1]
-        }
-        
-        obstacleCount = 0
-    })
-
-    return {capturable: {isCapturable, available}, pinned: {pinPos, available}, checkingPiecePos};
-}
 
 
 
@@ -152,6 +57,8 @@ export const getIsCapturable = (pos, side, isOccupied, getIsOccupiedBy, getPiece
                     if(getIsOccupiedBy([x, y], opSide + piece)) {
                         if(piece === 'ki' && getIsCapturable(pos, opSide, isOccupied, getIsOccupiedBy, getPieceByPos, true)) return
                         isCapturable = true;
+
+                        // console.log(pos)
                         return; 
                     }
                     else if(!isKing || !getPieceByPos(pos) === (side + 'ki')) { break; }

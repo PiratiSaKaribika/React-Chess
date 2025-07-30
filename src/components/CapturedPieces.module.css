@@ -1,15 +1,23 @@
 
 .body {
-    /* display: flex;
-    column-gap: 4px; */
+    display: flex;
+    height: 28px;
+}
+
+
+.pieceGroup {
+    height: 100%;
+
+    display: flex;
+    align-items: flex-end;
 }
 
 .sPiece {
-    /* width: 64px; */
-    border: 1px solid red;
-    height: 64px;
+    height: 100%;
+    margin-left: -16px;
 }
+.sPiece:first-child { margin-left: 0; }
 .sPiece > :first-child {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
 }
