@@ -88,7 +88,6 @@ export const getPositions = (piece, position, isOccupied, getIsOccupiedBy, pawnS
                 isOccupied([row, col], piece[0]) !== 0 || 
                 getIsCapturable([row, col], side, isOccupied, getIsOccupiedBy, getPieceByPos)
             ).length == 0) { castlingPositions.push([row, 6]) }
-        // if(ruleArr[1].filter(col => isOccupied([row, col], piece[0]) !== 0).length == 0) { castlingPositions.push([row, 6]) }
     }
 
     return pieceId == 'p' ?

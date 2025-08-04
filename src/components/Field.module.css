@@ -22,7 +22,6 @@
     display: none;
     content: '';
 
-    /* width: 32px; */
     width: 33%;
     aspect-ratio: 1 / 1;
     background: var(--gray-700-70);

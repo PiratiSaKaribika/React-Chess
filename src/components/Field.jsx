@@ -5,7 +5,6 @@ export default function Field({ row, col, piece, selected, lastPlayed, isAvailab
     
     const isSelected = selected ? (selected[0] == row && selected[1] == col) ? true : false : false
     const isLastPlayed = lastPlayed ? lastPlayed.find(pos => pos[0] === row && pos[1] === col) : false
-    // const letter = row === 7 ? Number.toString(col) : null
     
     const clickHandler = e => {
         e.preventDefault()
@@ -28,10 +27,8 @@ export default function Field({ row, col, piece, selected, lastPlayed, isAvailab
     if(isCheck) { style.background = `var(--alert)` }
     if(isLastPlayed) { style.background = `var(--prev-${side})` }
     if(isSelected) { style.background = `var(--selected-${side})` }
-    // if(isAvailable) { style.background = "yellow" }
 
 
-    // console.log("RENDERED")
 
     return (
         <div className={`${styles.field} ${isAvailable ? styles.fieldAvailable : ""}`} style={style} onClick={clickHandler}>

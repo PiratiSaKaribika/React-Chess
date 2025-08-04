@@ -13,7 +13,6 @@ const initialState = {
     board,
     lastPlayed: null,
     selected: null,
-    // isWhiteTurn: true,
     isWhiteTurn: null,
     castlingAllowed: [[true, true], [true, true]], // Is Castling allowed [white: [left. right], black: [left, right]]
     checkInfo: [{check: [], pin: []}, {check: [], pin: []}],
@@ -402,7 +401,6 @@ const reducer = (state, action) => {
 
         if(state.enPassantPos && sPiece.slice(1) === 'p' && comparePos(newPos, state.enPassantPos)) {
           updatePerformEnPassant(side);
-          // state.enPassantPos = null;
         }
 
 

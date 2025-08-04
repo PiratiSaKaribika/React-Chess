@@ -57,7 +57,7 @@ export default function App() {
 
 
   
-  const isCheck = state.checkInfo.map(obj => obj.check.length ? true : false)
+  // const isCheck = state.checkInfo.map(obj => obj.check.length ? true : false)
   
   const uiMoveList = state.history.current < state.history.moves.length ?
     state.history.uiMoveList.slice(0, state.history.current) :

@@ -65,12 +65,9 @@ export const board = [
         {piece: 'wp', isAvailable: false},
         {piece: 'wp', isAvailable: false},
         {piece: 'wp', isAvailable: false},
-        // {piece: '', isAvailable: false},
         {piece: 'wp', isAvailable: false},
         {piece: 'wp', isAvailable: false},
-        // {piece: '', isAvailable: false},
         {piece: 'wp', isAvailable: false},
-        // {piece: '', isAvailable: false},
     ],
     [
         {piece: 'wr', isAvailable: false},

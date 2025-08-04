@@ -58,7 +58,6 @@ export const getIsCapturable = (pos, side, isOccupied, getIsOccupiedBy, getPiece
                         if(piece === 'ki' && getIsCapturable(pos, opSide, isOccupied, getIsOccupiedBy, getPieceByPos, true)) return
                         isCapturable = true;
 
-                        // console.log(pos)
                         return; 
                     }
                     else if(!isKing || !getPieceByPos(pos) === (side + 'ki')) { break; }
@@ -124,9 +123,7 @@ export const getCheckInfo = (pos, side, isOccupied, getIsOccupiedBy, getPieceByP
                         path.push([x, y])
                         break;
                     }
-                    // obstacleCount++;
                     obstacleCount = 2;
-                    // break; - tf
                 } else { path.push([x, y]) }
 
                 if(pieceId === 'k') { break; }

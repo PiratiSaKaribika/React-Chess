@@ -17,26 +17,6 @@ export default memo(function Curtain({winner, startGame}) {
                 }
 
                 <div className={styles.timerOptions}>
-                    {/* <button 
-                    className={styles.sTimeOption}
-                    onClick={() => startGame(60)}
-                    >
-                    <h6>1 minute</h6>
-                    </button>
-
-                    <button 
-                    className={styles.sTimeOption}
-                    onClick={() => startGame(300)}
-                    >
-                    <h6>5 minute</h6>
-                    </button>
-
-                    <button 
-                    className={styles.sTimeOption}
-                    onClick={() => startGame(600)}
-                    >
-                    <h6>10 minute</h6>
-                    </button> */}
                     <Button 
                         text="1 min"
                         handler={() => startGame(60)}
