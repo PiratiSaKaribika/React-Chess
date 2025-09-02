@@ -4,8 +4,8 @@ Two player chess made entirely in react. Made with modern looks and good user ex
 
 
 # Demo
-[Menu image](.github/menu.png)
-[Game image](.github/game.png)
+![Menu image](.github/menu.png)
+![Game image](.github/game.png)
 
 
 # Features
