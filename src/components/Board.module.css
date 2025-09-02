@@ -16,25 +16,16 @@
     height: calc(100% / 8);
 }
 
-.boardRow:nth-child(odd) > *:nth-child(odd) { background: var(--primary-100); }
-.boardRow:nth-child(even) > *:nth-child(even) { background: var(--primary-100); }
-.boardRow:nth-child(even) > *:nth-child(odd) { background: var(--primary-300); }
-.boardRow:nth-child(odd) > *:nth-child(even) { background: var(--primary-300); }
+.boardRow:nth-child(odd) > *:nth-child(odd) { background: var(--primary-300); }
+.boardRow:nth-child(even) > *:nth-child(even) { background: var(--primary-300); }
+
+.boardRow:nth-child(even) > *:nth-child(odd) { background: var(--primary-100); }
+.boardRow:nth-child(odd) > *:nth-child(even) { background: var(--primary-100); }
 
 
 /* Field marks */
-.boardRow:nth-child(even) > :first-child > span:nth-child(2) { color: var(--primary-100); }
-.boardRow:last-child > :nth-child(even) > span:last-child { color: var(--primary-100); }
-
-
-.tmp {
-    width: 48px;
-    height: 48px;
-
-    position: fixed;
-    top: 50%;
-}
-.tmp:nth-child(2) { top: calc(50% - 48px); border-bottom: 2px solid black; }
+.boardRow:nth-child(even) > :first-child > span:nth-child(2) { color: var(--primary-300); }
+.boardRow:last-child > :nth-child(even) > span:last-child { color: var(--primary-300); }
 
 
 

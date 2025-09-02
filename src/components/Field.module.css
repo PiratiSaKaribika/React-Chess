@@ -41,7 +41,7 @@
 /* Marks (1-8, a-h) */
 .mark {
     position: absolute;
-    color: var(--primary-300);
+    color: var(--primary-100);
     
     -webkit-touch-callout: none;
     user-select: none;
