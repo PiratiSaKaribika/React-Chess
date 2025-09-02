@@ -12,7 +12,7 @@ Two player chess made entirely in react. Made with modern looks and good user ex
 
 - Play chess: Two player mode with all standard rules
 - Modern design: Clean and intuitive, focused on good user experience
-- Move history: Undo/redo your moves, making it easy to edit your moves - or just rewatch the game move by move
+- Move history: Undo/redo mechanics, making it easy to alter - or just rewatch the game move by move
 - Respnosive: Enjoy chess on any device
 
 
