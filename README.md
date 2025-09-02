@@ -20,12 +20,18 @@ Two player chess made entirely in react. Made with modern looks and good user ex
 
 <!-- start:code block -->
 ## Clone this repository
+```shell
 git clone https://github.com/PiratiSaKaribika/React-Chess.git
+```
 
 ## Install dependencies
+```shell
 cd React-Chess
 npm install
+```
 
 ## Run the app
+```shell
 npm run dev
+```
 <!-- end:code block -->
