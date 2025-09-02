@@ -1,12 +1,31 @@
-# React + Vite
+# React Chess
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Two player chess made entirely in react. Made with modern looks and good user experience in mind.
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+# Demo
+[Menu image](.github/menu.png)
+[Game image](.github/game.png)
 
-## Expanding the ESLint configuration
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+# Features
+
+- Play chess: Two player mode with all standard rules
+- Modern design: Clean and intuitive, focused on good user experience
+- Move history: Undo/redo your moves, making it easy to edit your moves - or just rewatch the game move by move
+- Respnosive: Enjoy chess on any device
+
+
+# Installation
+
+<!-- start:code block -->
+# Clone this repository
+git clone https://github.com/PiratiSaKaribika/React-Chess.git
+
+# Install dependencies
+cd React-Chess
+npm install
+
+# Run the app
+npm run dev
+<!-- end:code block -->
