@@ -1,14 +1,14 @@
-# React Chess
+## React Chess
 
 Two player chess made entirely in react. Made with modern looks and good user experience in mind.
 
 
-# Demo
+## Demo
 ![Menu image](.github/menu.png)
 ![Game image](.github/game.png)
 
 
-# Features
+## Features
 
 - Play chess: Two player mode with all standard rules
 - Modern design: Clean and intuitive, focused on good user experience
@@ -16,7 +16,7 @@ Two player chess made entirely in react. Made with modern looks and good user ex
 - Respnosive: Enjoy chess on any device
 
 
-# Installation
+## Installation
 
 <!-- start:code block -->
 # Clone this repository
